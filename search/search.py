@@ -117,6 +117,8 @@ def breadthFirstSearch(problem):
     closed = []
     while not fringe.isEmpty():
         node, actions = fringe.pop()
+        if node in closed:
+            continue
         if problem.isGoalState(node):
             return actions
         closed.append(node)
