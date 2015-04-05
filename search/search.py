@@ -117,14 +117,12 @@ def breadthFirstSearch(problem):
     closed = []
     while not fringe.isEmpty():
         node, actions = fringe.pop()
-
+        if problem.isGoalState(node):
+            return actions
+        closed.append(node)
         for coord, direction, steps in problem.getSuccessors(node):
             if not coord in closed:
-                if problem.isGoalState(coord):
-                    return actions + [direction]
                 fringe.push((coord, actions + [direction]))
-                closed.append(coord)
-
     return []
 
 
@@ -133,18 +131,27 @@ def uniformCostSearch(problem):
     fringe = util.PriorityQueue()
     fringe.push((problem.getStartState(), []), 0)
 
-    closed = []
+    closed = set()
+    considering = {}
     while not fringe.isEmpty():
         node, actions = fringe.pop()
+        if node in closed:
+            continue
+
+        closed.add(node)
+        if (node in considering):
+            del considering[node]
         if problem.isGoalState(node):
             return actions
-        closed.append(node)
-
         for coord, direction, steps in problem.getSuccessors(node):
-            if not coord in closed:
-                closed.append(coord)
-                newActions = actions + [direction]
-                fringe.push((coord, newActions), problem.getCostOfActions(newActions))
+            newActions = actions + [direction]
+            newCost = problem.getCostOfActions(newActions)
+            if coord not in closed and coord not in considering:
+                fringe.push((coord, newActions), newCost)
+            else:
+                if coord in considering.keys() and newCost < considering[coord]:
+                    considering[coord] = newCost
+                    fringe.push((coord, newActions), newCost)
 
     return []
 
@@ -158,22 +165,30 @@ def nullHeuristic(state, problem=None):
 
 
 def aStarSearch(problem, heuristic=nullHeuristic):
-    """Search the node that has the lowest combined cost and heuristic first."""
     fringe = util.PriorityQueue()
     fringe.push((problem.getStartState(), []), 0)
 
-    closed = []
+    closed = set()
+    considering = {}
     while not fringe.isEmpty():
         node, actions = fringe.pop()
+        if node in closed:
+            continue
+
+        closed.add(node)
+        if (node in considering):
+            del considering[node]
         if problem.isGoalState(node):
             return actions
-        closed.append(node)
-
         for coord, direction, steps in problem.getSuccessors(node):
-            if not coord in closed:
-                newActions = actions + [direction]
-                cost = problem.getCostOfActions(newActions) + heuristic(coord, problem)
-                fringe.push((coord, newActions), cost)
+            newActions = actions + [direction]
+            newCost = problem.getCostOfActions(newActions) + heuristic(coord, problem)
+            if coord not in closed and coord not in considering:
+                fringe.push((coord, newActions), newCost)
+            else:
+                if coord in considering.keys() and newCost < considering[coord]:
+                    considering[coord] = newCost
+                    fringe.push((coord, newActions), newCost)
 
     return []
 
