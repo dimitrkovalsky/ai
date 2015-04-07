@@ -16,5 +16,11 @@ python pacman.py -l mediumScaryMaze -p StayWestSearchAgent
 # A*
 python pacman.py -l bigMaze -z .5 -p SearchAgent -a fn=astar,heuristic=manhattanHeuristic
 
+
+# Heuristic
+python pacman.py -p SearchAgent -a fn=aStarSearch,prob=CornersProblem,heuristic=cornersHeuristic
+
+# Suboptimal
+python pacman.py -l bigSearch -p ClosestDotSearchAgent -z .5
 # Corners
 python pacman.py -l mediumCorners -p SearchAgent -a fn=bfs,prob=CornersProblem
