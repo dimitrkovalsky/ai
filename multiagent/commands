@@ -1,0 +1,7 @@
+# Reflex agent
+
+python pacman.py -p ReflexAgent
+python pacman.py -p ReflexAgent -l testClassic
+python pacman.py --frameTime 0 -p ReflexAgent -k 1
+python pacman.py --frameTime 0 -p ReflexAgent -k 2
+python autograder.py -q q1
