@@ -5,3 +5,13 @@ python pacman.py -p ReflexAgent -l testClassic
 python pacman.py --frameTime 0 -p ReflexAgent -k 1
 python pacman.py --frameTime 0 -p ReflexAgent -k 2
 python autograder.py -q q1
+
+# Minimax
+
+python pacman.py -p MinimaxAgent -l minimaxClassic -a depth=4
+python pacman.py -p MinimaxAgent -a depth=4 --frameTime 0
+python autograder.py -q q2
+
+# Alpha-Beta Pruning
+python pacman.py -p AlphaBetaAgent -a depth=3 --frameTime 0
+python autograder.py -q q3

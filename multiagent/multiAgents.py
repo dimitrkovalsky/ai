@@ -125,6 +125,14 @@ class MultiAgentSearchAgent(Agent):
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
 
+    def isTerminal(self, state, depth, agent):
+       return depth == self.depth or \
+              state.isWin() or \
+              state.isLose() or \
+              state.getLegalActions(agent) == 0
+
+    def isPacman(self, state, agent):
+        return agent % state.getNumAgents() == 0
 
 class MinimaxAgent(MultiAgentSearchAgent):
     """
@@ -154,8 +162,25 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.isLose():
             Returns whether or not the game state is a losing state
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def minimax(state, depth, agent):
+            if agent == state.getNumAgents():  # is pacman
+                return minimax(state, depth + 1, 0)  # start next depth
+
+            if self.isTerminal(state, depth, agent):
+                return self.evaluationFunction(state)  # return evaluation for bottom states
+
+            # find the "best" (min or max) state of the successors
+            successors = (
+                minimax(state.generateSuccessor(agent, action), depth, agent + 1)
+                for action in state.getLegalActions(agent)
+            )
+            return (max if self.isPacman(state, agent) else min)(successors)
+
+        # return the best of pacman's possible moves
+        return max(gameState.getLegalActions(0),
+                   key=lambda x: minimax(gameState.generateSuccessor(0, x), 0, 1)
+                   )
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -167,8 +192,41 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def dispatch(state, depth, agent, A=float("-inf"), B=float("inf")):
+            if agent == state.getNumAgents():  # next depth
+                depth += 1
+                agent = 0
+
+            if self.isTerminal(state, depth, agent):  # dead end
+                return self.evaluationFunction(state), None
+
+            if self.isPacman(state, agent):
+                return getValue(state, depth, agent, A, B, float('-inf'), max)
+            else:
+                return getValue(state, depth, agent, A, B, float('inf'), min)
+
+        def getValue(state, depth, agent, A, B, ms, mf):
+            bestScore = ms
+            bestAction = None
+
+            for action in state.getLegalActions(agent):
+                successor = state.generateSuccessor(agent, action)
+                score,_ = dispatch(successor, depth, agent + 1, A, B)
+                bestScore, bestAction = mf((bestScore, bestAction), (score, action))
+
+                if self.isPacman(state, agent):
+                    if bestScore > B:
+                        return bestScore, bestAction
+                    A = mf(A, bestScore)
+                else:
+                    if bestScore < A:
+                        return bestScore, bestAction
+                    B = mf(B, bestScore)
+
+            return bestScore, bestAction
+
+        _,action = dispatch(gameState, 0, 0)
+        return action
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
