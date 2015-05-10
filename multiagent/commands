@@ -15,3 +15,7 @@ python autograder.py -q q2
 # Alpha-Beta Pruning
 python pacman.py -p AlphaBetaAgent -a depth=3 --frameTime 0
 python autograder.py -q q3
+
+# Expectimax
+
+python autograder.py -q q4
