@@ -1,0 +1,48 @@
+# MDPs
+
+python gridworld.py -m
+python gridworld.py -h
+python gridworld.py -g MazeGrid
+
+
+# Value Iteration Agent
+
+python autograder.py -q q1
+python gridworld.py -a value -i 100 -k 10
+python gridworld.py -a value -i 5
+
+
+# Bridge Grid
+
+python gridworld.py -a value -i 100 -g BridgeGrid --discount 0.9 --noise 0.2
+python autograder.py -q q2
+
+
+# Discount Grid
+python autograder.py -q q3
+
+
+# Q Learning Agent
+
+python gridworld.py -a q -k 5 -m
+python autograder.py -q q4
+
+# Epsilon greedy
+
+python autograder.py -q q5
+python crawler.py
+
+# Bridge
+python autograder.py -q q6
+python gridworld.py -a q -k 50 -n 0 -g BridgeGrid -e 1
+
+# Q-learning Pacman
+python pacman.py -p PacmanQAgent -x 2000 -n 2010 -l smallGrid
+python autograder.py -q q7
+python pacman.py -p PacmanQAgent -n 10 -l smallGrid -a numTraining=10
+
+# Q-learning approximation
+python pacman.py -p ApproximateQAgent -x 2000 -n 2010 -l smallGrid
+python pacman.py -p ApproximateQAgent -a extractor=SimpleExtractor -x 50 -n 60 -l mediumGrid
+python pacman.py -p ApproximateQAgent -a extractor=SimpleExtractor -x 50 -n 60 -l mediumClassic
+python autograder.py -q q8
