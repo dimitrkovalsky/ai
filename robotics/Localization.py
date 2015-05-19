@@ -105,7 +105,7 @@ colors = [['R', 'G', 'G', 'R', 'R'],
           ['R', 'R', 'R', 'R', 'R']]
 measurements = ['G', 'G', 'G', 'G', 'G']
 motions = [[0, 0], [0, 1], [1, 0], [1, 0], [0, 1]]
-sensor_right = 0.7
-p_move = 0.8
+sensor_right = .7
+p_move = .8
 p = localize(colors, measurements, motions, sensor_right, p_move)
 show(p)  # displays your answer

@@ -1,18 +1,23 @@
-# ----------------
+# --------------
 # User Instructions
+# 
+# Define a function cte in the robot class that will
+# compute the crosstrack error for a robot on a
+# racetrack with a shape as described in the video.
 #
-# Implement twiddle as shown in the previous two videos.
-# Your accumulated error should be very small!
+# You will need to base your error calculation on
+# the robot's location on the track. Remember that 
+# the robot will be traveling to the right on the
+# upper straight segment and to the left on the lower
+# straight segment.
 #
-# Your twiddle function should RETURN the accumulated
-# error. Try adjusting the parameters p and dp to make
-# this error as small as possible.
+# --------------
+# Grading Notes
 #
-# Try to get your error below 1.0e-10 with as few iterations
-# as possible (too many iterations will cause a timeout).
-# No cheating!
-# ------------
-
+# We will be testing your cte function directly by
+# calling it with different robot locations and making
+# sure that it returns the correct crosstrack error.  
+ 
 from math import *
 import random
 
@@ -68,13 +73,13 @@ class robot:
 
     def set_steering_drift(self, drift):
         self.steering_drift = drift
-
+        
     # --------
     # move: 
     #    steering = front wheel steering angle, limited by max_steering_angle
     #    distance = total distance driven, most be non-negative
 
-    def move(self, steering, distance,
+    def move(self, steering, distance, 
              tolerance = 0.001, max_steering_angle = pi / 4.0):
 
         if steering > max_steering_angle:
@@ -130,77 +135,80 @@ class robot:
         return '[x=%.5f y=%.5f orient=%.5f]'  % (self.x, self.y, self.orientation)
 
 
+############## ONLY ADD / MODIFY CODE BELOW THIS LINE ####################
+
+    def dist(self, x1, y1, x2, y2):
+        return (((x1-x2)**2 + (y1-y2)**2) ** 0.5)
+   
+    def cte(self, radius):
+        # 
+        #
+        # Add code here
+        #
+        #
+        r     = float(radius)
+        x     = float(self.x)
+        y     = float(self.y)
+        theta = float(self.orientation)
+        cte   = 0.0
+
+        if x < r:
+            # Should be on the left half-circle.
+            # CTE is actual distance from circle center, minus radius.
+            cte = self.dist(x, y, r, r) - r
+
+        elif x > (3.0 * r):
+            # Should be on the right half-circle.
+            # CTE is actual distance from circle center, minus radius.
+            cte = self.dist(x, y, (3.0 * r), r) - r
+
+        elif (theta < 1.5*pi) and (theta > (0.5*pi)):
+            # Headed left, between circles, should be on bottom straightaway
+            cte = 0.0 - y
+
+        else:
+            # Headed right, between circles, should be on top straightaway
+            cte = y - (2.0 * r)
+                
+        return cte
+    
+############## ONLY ADD / MODIFY CODE ABOVE THIS LINE ####################
+
+
+
+
 # ------------------------------------------------------------------------
 #
 # run - does a single control run.
 
 
-def run(params, printflag = False):
+def run(params, radius, printflag = False):
     myrobot = robot()
-    myrobot.set(0.0, 5.0, 0.0)
-    speed = 1.0
+    myrobot.set(0.0, radius, pi / 2.0)
+    speed = 1.0 # motion distance is equal to speed (we assume time = 1)
     err = 0.0
     int_crosstrack_error = 0.0
-    N = 100
-    # myrobot.set_noise(0.1, 0.0)
-    myrobot.set_steering_drift(10.0 / 180.0 * pi) # 10 degree steering error
+    N = 200
 
+    crosstrack_error = myrobot.cte(radius) # You need to define the cte function!
 
-    crosstrack_error = myrobot.y
-
-
-    for i in range(N * 2):
-
-        diff_crosstrack_error = myrobot.y - crosstrack_error
-        crosstrack_error = myrobot.y
+    for i in range(N*2):
+        diff_crosstrack_error = - crosstrack_error
+        crosstrack_error = myrobot.cte(radius)
+        diff_crosstrack_error += crosstrack_error
         int_crosstrack_error += crosstrack_error
-
-        steer = - params[0] * crosstrack_error  \
-            - params[1] * diff_crosstrack_error \
-            - int_crosstrack_error * params[2]
+        steer = - params[0] * crosstrack_error \
+                - params[1] * diff_crosstrack_error \
+                - params[2] * int_crosstrack_error
         myrobot = myrobot.move(steer, speed)
         if i >= N:
-            err += (crosstrack_error ** 2)
+            err += crosstrack_error ** 2
         if printflag:
-            print myrobot, steer
+            print myrobot
             print myrobot, "CTE=", crosstrack_error, "steer=", steer
     return err / float(N)
 
-
-def twiddle(tol = 0.2): #Make this tolerance bigger if you are timing out!
-############## ADD CODE BELOW ####################
-
-
-    nParams = 3
-    params = [0.0 for row in range(nParams)]
-    dparams = [1.0 for row in range(nParams)]
-    bestError = run(params)
-    count = 0
-    while sum(dparams) > tol:
-        for i in range(nParams):
-            params[i] += dparams[i]
-            err = run(params)
-
-            if err < bestError:
-                bestError = err
-                dparams[i] *= 1.1
-            else:
-                params[i] -= 2.0 * dparams[i]
-                err = run(params)
-                if err < bestError:
-                    bestError = err
-                    dparams[i] *= 1.1
-                else:
-                    params[i] += dparams[i]
-                    dparams[i] *= 0.9
-        count += 1
-        print 'Twiddle #', count, params, ' -> ', bestError
-    return params
-
-params = twiddle()
-err = run(params, True)
-print "\nFinal params : \n", params, ' \n err -> ', err
-
-
-
-
+radius = 25.0
+params = [10.0, 15.0, 0]
+err = run(params, radius, True)
+print '\nFinal paramaeters: ', params, '\n ->', err

@@ -30,7 +30,7 @@ from math import *
 import random
 
 # --------
-#
+# 
 # some top level parameters
 #
 
@@ -44,7 +44,7 @@ tolerance_orientation = 0.25 # Tolerance for orientation.
 
 
 # --------
-#
+# 
 # the "world" has 4 landmarks.
 # the robot's initial coordinates are somewhere in the square
 # represented by the landmarks.
@@ -56,15 +56,15 @@ landmarks  = [[0.0, 100.0], [0.0, 0.0], [100.0, 0.0], [100.0, 100.0]] # position
 world_size = 100.0 # world is NOT cyclic. Robot is allowed to travel "out of bounds"
 
 # ------------------------------------------------
-#
+# 
 # this is the robot class
 #
 
 class robot:
 
     # --------
-    # init:
-    #    creates robot and initializes location/orientation
+    # init: 
+    #    creates robot and initializes location/orientation 
     #
 
     def __init__(self, length = 20.0):
@@ -77,7 +77,7 @@ class robot:
         self.distance_noise = 0.0 # initialize distance noise to zero
 
     # --------
-    # set:
+    # set: 
     #    sets a robot coordinate
     #
 
@@ -90,7 +90,7 @@ class robot:
         self.orientation = float(new_orientation)
 
     # --------
-    # set_noise:
+    # set_noise: 
     #    sets the noise parameters
     #
     def set_noise(self, new_b_noise, new_s_noise, new_d_noise):
@@ -103,7 +103,7 @@ class robot:
     # --------
     # measurement_prob
     #    computes the probability of a measurement
-    #
+    #  
 
     def measurement_prob(self, measurements):
 
@@ -116,84 +116,100 @@ class robot:
         for i in range(len(measurements)):
             error_bearing = abs(measurements[i] - predicted_measurements[i])
             error_bearing = (error_bearing + pi) % (2.0 * pi) - pi # truncate
-
+            
 
             # update Gaussian
-            error *= (exp(- (error_bearing ** 2) / (self.bearing_noise ** 2) / 2.0) /
+            error *= (exp(- (error_bearing ** 2) / (self.bearing_noise ** 2) / 2.0) /  
                       sqrt(2.0 * pi * (self.bearing_noise ** 2)))
 
         return error
-
+    
     def __repr__(self): #allows us to print robot attributes.
-        return '[x=%.6s y=%.6s orient=%.6s]' % (str(self.x), str(self.y),
+        return '[x=%.6s y=%.6s orient=%.6s]' % (str(self.x), str(self.y), 
                                                 str(self.orientation))
-
+    
     ############# ONLY ADD/MODIFY CODE BELOW HERE ###################
+       
+    # --------
+    # move: 
+    #   
+    # copy your code from the previous exercise
+    # and modify it so that it simulates motion noise
+    # according to the noise parameters
+    #           self.steering_noise
+    #           self.distance_noise
+    #
+    def move(self, motion):
+        x     = float(self.x)           # x coord
+        y     = float(self.y)           # y coord
+        theta = float(self.orientation) # heading
+        L     = float(self.length)      # vehicle length
+
+        # steering angle + noise
+        alpha = float(motion[0]) + random.gauss(0.0, self.steering_noise)
+
+        # distance to move + noise
+        d     = float(motion[1]) + random.gauss(0.0, self.distance_noise)
+
+        # Init new position to same position. Will not update this
+        # if the robot is not actually moving.
+        new_x     = x
+        new_y     = y
+        new_theta = theta
+
+        # Only do anything if we're actually moving
+        if (abs(d) > 0.000001):
+            if (abs(alpha) > 0.000001):
+                # Turning
+                beta      = (d / L) * tan(alpha)         # turning angle
+                R         = d / beta                     # turning radius
+                cx        = x - (sin(theta) * R)         # x center of turn
+                cy        = y + (cos(theta) * R)         # y center of turn
+                new_x     = cx + (sin(theta + beta) * R) # new x coord
+                new_y     = cy - (cos(theta + beta) * R) # new y coord
+                new_theta = (theta + beta) % (2.0 * pi)  # new heading
+            else:
+                # Not turning. Linear math.
+                new_x = x + (cos(theta) * d)
+                new_y = y + (sin(theta) * d)
+
+        result = robot(L)
+        result.set(new_x, new_y, new_theta)
+        result.set_noise(
+            self.bearing_noise,
+            self.steering_noise,
+            self.distance_noise)
+
+        return result
 
     # --------
-    # move:
-    #
-    def move(self, motion): # Do not change the name of this function
-
-       angle = motion[0]
-       angle += random.gauss(0.0, self.steering_noise)
-       angle %= 2.0 * pi
-       distance = motion[1]
-       distance += random.gauss(0.0, self.distance_noise)
-
-       beta = (distance / self.length) * tan(angle)
-       newX = 0
-       newY =0
-       newOrientation = 0
-       theta = self.orientation
-       if (abs(beta < 0.001)):
-           newX = self.x + distance * cos(theta)
-           newY = self.y + distance * sin(theta)
-           newOrientation = (theta + beta) % (2*pi)
-       else:
-           R = distance / beta
-           cx = self.x - sin(theta) * R
-           cy = self.y + cos(theta) * R
-           newX = cx + sin(theta + beta) * R
-           newY = cy - cos(theta + beta) * R
-           newOrientation = (theta + beta) % (2*pi)
-
-       result = robot()
-       result.length = self.length
-       result.bearing_noise = self.bearing_noise
-       result.steering_noise = self.steering_noise
-       result.distance_noise = self.distance_noise
-
-       result.set(newX, newY,newOrientation)
-       return result # make sure your move function returns an instance
-                     # of the robot class with the correct coordinates.
-
-
-    # --------
-    # sense:
-    #
-    def sense(self, add_noise = 1):
-        Z = []
-        for i in range(len(landmarks)):
-            bearing = atan2(landmarks[i][0] - self.y,
-                            landmarks[i][1] - self.x) - self.orientation
-            if add_noise:
-                bearing += random.gauss(0.0, self.bearing_noise)
-                bearing %= 2.0 * pi
-            Z.append(bearing)
-        return Z
-
+    # sense: 
+    #    
     # copy your code from the previous exercise
     # and modify it so that it simulates bearing noise
     # according to
     #           self.bearing_noise
+    def sense(self, use_noise=1):
+        Z = []
+        for i in range(len(landmarks)):
+            landmark_x = float(landmarks[i][1])
+            landmark_y = float(landmarks[i][0])
+            dx = landmark_x - float(self.x)
+            dy = landmark_y - float(self.y)
+            bearing = (atan2(dy, dx) - float(self.orientation))
+            if (use_noise != 0):
+                bearing += random.gauss(0.0, self.bearing_noise)
+            bearing %= (2.0 * pi)
+            Z.append(bearing)
+        return Z
+    
 
     ############## ONLY ADD/MODIFY CODE ABOVE HERE ####################
 
 # --------
 #
 # extract position from a particle set
-#
+# 
 
 def get_position(p):
     x = 0.0
@@ -205,7 +221,7 @@ def get_position(p):
         # orientation is tricky because it is cyclic. By normalizing
         # around the first particle we are somewhat more robust to
         # the 0=2pi problem
-        orientation += (((p[i].orientation - p[0].orientation + pi) % (2.0 * pi))
+        orientation += (((p[i].orientation - p[0].orientation + pi) % (2.0 * pi)) 
                         + p[0].orientation - pi)
     return [x / len(p), y / len(p), orientation / len(p)]
 
@@ -213,7 +229,7 @@ def get_position(p):
 #
 # The following code generates the measurements vector
 # You can use it to develop your solution.
-#
+# 
 
 
 def generate_ground_truth(motions):
@@ -271,7 +287,7 @@ def particle_filter(motions, measurements, N=500): # I know it's tempting, but d
     # --------
     #
     # Make particles
-    #
+    # 
 
     p = []
     for i in range(N):
@@ -282,10 +298,10 @@ def particle_filter(motions, measurements, N=500): # I know it's tempting, but d
     # --------
     #
     # Update particles
-    #
+    #     
 
     for t in range(len(motions)):
-
+    
         # motion update (prediction)
         p2 = []
         for i in range(N):
@@ -309,7 +325,7 @@ def particle_filter(motions, measurements, N=500): # I know it's tempting, but d
                 index = (index + 1) % N
             p3.append(p[index])
         p = p3
-
+    
     return get_position(p)
 
 ## IMPORTANT: You may uncomment the test cases below to test your code.
@@ -325,10 +341,10 @@ def particle_filter(motions, measurements, N=500): # I know it's tempting, but d
 ## of the time.
 
 
-
+ 
 ## --------
 ## TEST CASES:
-##
+## 
 ##1) Calling the particle_filter function with the following
 ##    motions and measurements should return a [x,y,orientation]
 ##    vector near [x=93.476 y=75.186 orient=5.2664], that is, the
@@ -336,13 +352,13 @@ def particle_filter(motions, measurements, N=500): # I know it's tempting, but d
 ##
 # motions = [[2. * pi / 10, 20.] for row in range(8)]
 # measurements = [[4.746936, 3.859782, 3.045217, 2.045506],
-#                [3.510067, 2.916300, 2.146394, 1.598332],
-#                [2.972469, 2.407489, 1.588474, 1.611094],
-#                [1.906178, 1.193329, 0.619356, 0.807930],
-#                [1.352825, 0.662233, 0.144927, 0.799090],
-#                [0.856150, 0.214590, 5.651497, 1.062401],
-#                [0.194460, 5.660382, 4.761072, 2.471682],
-#                [5.717342, 4.736780, 3.909599, 2.342536]]
+#                 [3.510067, 2.916300, 2.146394, 1.598332],
+#                 [2.972469, 2.407489, 1.588474, 1.611094],
+#                 [1.906178, 1.193329, 0.619356, 0.807930],
+#                 [1.352825, 0.662233, 0.144927, 0.799090],
+#                 [0.856150, 0.214590, 5.651497, 1.062401],
+#                 [0.194460, 5.660382, 4.761072, 2.471682],
+#                 [5.717342, 4.736780, 3.909599, 2.342536]]
 #
 # print particle_filter(motions, measurements)
 
@@ -351,17 +367,14 @@ def particle_filter(motions, measurements, N=500): # I know it's tempting, but d
 ##    It will print the robot's last location when calling it.
 ##
 ##
-# number_of_iterations = 6
-# motions = [[2. * pi / 20, 12.] for row in range(number_of_iterations)]
-#
-# x = generate_ground_truth(motions)
-# final_robot = x[0]
-# measurements = x[1]
-# estimated_position = particle_filter(motions, measurements)
-# print_measurements(measurements)
-# print 'Ground truth:    ', final_robot
-# print 'Particle filter: ', estimated_position
-# print 'Code check:      ', check_output(final_robot, estimated_position)
+number_of_iterations = 6
+motions = [[2. * pi / 20, 12.] for row in range(number_of_iterations)]
 
-
-
+x = generate_ground_truth(motions)
+final_robot = x[0]
+measurements = x[1]
+estimated_position = particle_filter(motions, measurements)
+print_measurements(measurements)
+print 'Ground truth:    ', final_robot
+print 'Particle filter: ', estimated_position
+print 'Code check:      ', check_output(final_robot, estimated_position)
